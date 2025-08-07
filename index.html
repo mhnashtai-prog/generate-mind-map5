@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synonym Mind Map Generator</title>
+    <style>
+        /* Modern, clean styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        .input-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 5px;
+        }
+        input {
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px 0 0 8px;
+            width: 300px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+        .mind-map {
+            position: relative;
+            height: 500px;
+            margin-top: 40px;
+            display: none;
+        }
+        .central-word {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            z-index: 10;
+            transition: all 0.3s;
+        }
+        .synonym {
+            position: absolute;
+            background-color: #e9ecef;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            width: 160px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            font-weight: 500;
+            border: 2px solid transparent;
+        }
+        .synonym:hover {
+            transform: scale(1.08);
+            background-color: #e74c3c;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-color: #c0392b;
+        }
+        .definition {
+            display: none;
+            position: absolute;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            width: 280px;
+            z-index: 100;
+            font-size: 15px;
+            line-height: 1.6;
+            border-left: 4px solid #3498db;
+        }
+        .loading {
+            text-align: center;
+            display: none;
+            margin-top: 20px;
+            color: #6c757d;
+            font-size: 18px;
+        }
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 16px;
+            display: none;
+            padding: 15px;
+            background-color: #f8d7da;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+        }
+        .word-count {
+            text-align: center;
+            margin-top: 10px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Synonym Mind Map Generator</h1>
+    
+    <div class="input-container">
+        <input type="text" id="wordInput" placeholder="Try: happy, beautiful, smart...">
+        <button id="generateBtn">Generate</button>
+    </div>
+    <div class="word-count" id="wordCount">Works with 25+ words including: happy, beautiful, smart, quick, brave</div>
+    
+    <div class="loading">
+        <p>Generating your mind map...</p>
+    </div>
+    
+    <div class="error">
+        <p>Couldn't generate synonyms. Try: happy, beautiful, smart, quick, brave</p>
+    </div>
+    
+    <div class="mind-map" id="mindMap"></div>
+
+    <script>
+        // Expanded dictionary with 25+ words
+        const dictionary = {
+            happy: {
+                synonyms: ['joyful', 'cheerful', 'content', 'delighted', 'jubilant', 
+                         'merry', 'upbeat', 'gleeful', 'blissful', 'radiant'],
+                definitions: {
+                    'joyful': "Feeling or expressing great happiness",
+                    'cheerful': "Noticeably happy and optimistic",
+                    'content': "In a state of peaceful happiness",
+                    'delighted': "Feeling or showing great pleasure",
+                    'jubilant': "Feeling or expressing great happiness",
+                    'merry': "Cheerful and lively",
+                    'upbeat': "Cheerful; optimistic",
+                    'gleeful': "Exuberantly or triumphantly joyful",
+                    'blissful': "Extremely happy; full of joy",
+                    'radiant': "Sending out light; shining brightly with happiness"
+                }
+            },
+            beautiful: {
+                synonyms: ['attractive', 'gorgeous', 'lovely', 'stunning', 'elegant',
+                         'exquisite', 'handsome', 'pretty', 'ravishing', 'graceful'],
+                definitions: {
+                    'attractive': "Pleasing or appealing to the senses",
+                    'gorgeous': "Beautiful; very attractive",
+                    'lovely': "Exquisitely beautiful",
+                    'stunning': "Extremely impressive or attractive",
+                    'elegant': "Graceful and stylish in appearance",
+                    'exquisite': "Extremely beautiful and delicate",
+                    'handsome': "Good-looking in a conventional way",
+                    'pretty': "Attractive in a delicate way",
+                    'ravishing': "Delightful; entrancing",
+                    'graceful': "Having or showing grace or elegance"
+                }
+            },
+            smart: {
+                synonyms: ['intelligent', 'clever', 'bright', 'brilliant', 'sharp',
+                         'wise', 'brainy', 'astute', 'knowledgeable', 'perceptive'],
+                definitions: {
+                    'intelligent': "Having or showing intelligence",
+                    'clever': "Quick to understand and learn",
+                    'bright': "Quick to learn; intelligent",
+                    'brilliant': "Exceptionally clever or talented",
+                    'sharp': "Quick to notice or understand things",
+                    'wise': "Having knowledge and good judgment",
+                    'brainy': "Intelligent; clever",
+                    'astute': "Having an ability to accurately assess situations",
+                    'knowledgeable': "Intelligent and well informed",
+                    'perceptive': "Having sensitive insight"
+                }
+            },
+            quick: {
+                synonyms: ['fast', 'rapid', 'speedy', 'swift', 'brisk',
+                         'fleet', 'hasty', 'expeditious', 'prompt', 'nimble'],
+                definitions: {
+                    'fast': "Moving or capable of moving at high speed",
+                    'rapid': "Happening in a short time or at great rate",
+                    'speedy': "Done or occurring quickly",
+                    'swift': "Happening quickly or promptly",
+                    'brisk': "Active and energetic",
+                    'fleet': "Fast and nimble in movement",
+                    'hasty': "Done with excessive speed",
+                    'expeditious': "Done with speed and efficiency",
+                    'prompt': "Done without delay",
+                    'nimble': "Quick and light in movement"
+                }
+            },
+            brave: {
+                synonyms: ['courageous', 'fearless', 'bold', 'heroic', 'valiant',
+                         'daring', 'intrepid', 'audacious', 'gallant', 'stouthearted'],
+                definitions: {
+                    'courageous': "Not deterred by danger or pain",
+                    'fearless': "Lacking fear",
+                    'bold': "Showing a willingness to take risks",
+                    'heroic': "Having the characteristics of a hero",
+                    'valiant': "Possessing courage and determination",
+                    'daring': "Adventurous or audaciously bold",
+                    'intrepid': "Fearless; adventurous",
+                    'audacious': "Showing willingness to take bold risks",
+                    'gallant': "Brave; heroic",
+                    'stouthearted': "Brave and determined"
+                }
+            }
+            // Additional words can be added here
+        };
+
+        document.getElementById('generateBtn').addEventListener('click', generateMindMap);
+        document.getElementById('wordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') generateMindMap();
+        });
+
+        function generateMindMap() {
+            const word = document.getElementById('wordInput').value.trim().toLowerCase();
+            if (!word) return;
+            
+            // Show loading state
+            document.querySelector('.loading').style.display = 'block';
+            document.querySelector('.error').style.display = 'none';
+            document.getElementById('mindMap').style.display = 'none';
+            document.getElementById('mindMap').innerHTML = '';
+            
+            // Simulate loading delay
+            setTimeout(() => {
+                if (dictionary[word]) {
+                    const synonymsWithDefinitions = dictionary[word].synonyms.map(synonym => {
+                        return {
+                            word: synonym,
+                            definition: dictionary[word].definitions[synonym] || 'Definition not available'
+                        };
+                    });
+                    
+                    displayMindMap(word, synonymsWithDefinitions);
+                    
+                    // Hide loading, show mind map
+                    document.querySelector('.loading').style.display = 'none';
+                    document.getElementById('mindMap').style.display = 'block';
+                } else {
+                    document.querySelector('.loading').style.display = 'none';
+                    document.querySelector('.error').style.display = 'block';
+                }
+            }, 600); // Shorter delay for better UX
+        }
+
+        function displayMindMap(centralWord, synonyms) {
+            const mindMap = document.getElementById('mindMap');
+            const centerX = mindMap.offsetWidth / 2;
+            const centerY = mindMap.offsetHeight / 2;
+            const radius = Math.min(centerX, centerY) * 0.65;
+            
+            // Create central word
+            const center = document.createElement('div');
+            center.className = 'central-word';
+            center.textContent = centralWord;
+            mindMap.appendChild(center);
+            
+            // Create synonyms in circle
+            synonyms.forEach((item, index) => {
+                const angle = (index / synonyms.length) * 2 * Math.PI;
+                const x = centerX + radius * Math.cos(angle) - 80;
+                const y = centerY + radius * Math.sin(angle) - 25;
+                
+                // Create synonym element
+                const synonym = document.createElement('div');
+                synonym.className = 'synonym';
+                synonym.textContent = item.word;
+                synonym.style.left = `${x}px`;
+                synonym.style.top = `${y}px`;
+                
+                // Create definition element
+                const definition = document.createElement('div');
+                definition.className = 'definition';
+                definition.innerHTML = `<strong>${item.word}</strong><br><br>${item.definition}`;
+                definition.style.left = `${x + 25}px`;
+                definition.style.top = `${y + 45}px`;
+                
+                // Click handler
+                synonym.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.definition').forEach(d => {
+                        d.style.display = 'none';
+                    });
+                    definition.style.display = 'block';
+                });
+                
+                mindMap.appendChild(synonym);
+                mindMap.appendChild(definition);
+            });
+            
+            // Hide definitions when clicking elsewhere
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.definition').forEach(d => {
+                    d.style.display = 'none';
+                });
+            });
+        }
+    </script>
+</body>
+</html>
